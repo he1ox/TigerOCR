@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 
 # Configurar el comando de Tesseract OCR
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+#pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 def read_image(image):
     return pytesseract.image_to_string(image, lang='eng')
@@ -18,7 +18,8 @@ def read_pdf(uploaded_file):
         temp_file.write(uploaded_file.read())
         temp_file_path = temp_file.name
 
-    images = convert_from_path(temp_file_path, poppler_path=r"C:\Py_Projects\poppler-24.02.0\Library\bin")
+    #images = convert_from_path(temp_file_path, poppler_path=r"C:\Py_Projects\poppler-24.02.0\Library\bin")
+    images = convert_from_path(temp_file_path)
     text = ''
     for image in images:
         text += pytesseract.image_to_string(image, lang='eng')
