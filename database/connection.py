@@ -13,4 +13,9 @@ def get_Connection():
     except Exception as e:
         print("Not connected to MongoDB")
         print(e)
-        
+
+def createDataUser(data: dict[str, str]):
+    db = client["TigerOCR"]
+    collection = db["users"]
+    collection.insert_one(data)
+    print("Data inserted")
