@@ -9,7 +9,9 @@ from collections import Counter
 
 import pyperclip
 from database import connection as db_mongo
-
+from fields import select_fields as fields 
+from pdf import gen_pdf as pdf
+from pdf import convert as convert_pdf
 # Configurar el comando de Tesseract OCR
 # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -45,7 +47,10 @@ def plot_word_frequency(text, num_words=10):
     plt.title("Top Palabras Más Frecuentes")
     st.pyplot(plt)
     
-
+def show_pdf(pdf_path):
+    imagenes = convert_pdf.toImage(pdf_path)
+    for imagen in imagenes:
+        st.image(imagen, caption="Imagen cargada", use_column_width=True)
 
 
 # Base de datos
@@ -88,9 +93,18 @@ if uploaded_file is not None:
     st.success("Procesamiento completado!")
 
     st.write("Texto extraído:")
-
+    dict_fields = fields.getImportantFields(text)
+    
+    if st.button("Generar PDF", type="primary"):
+        pdf_filename = pdf.build(dict_fields)
+        show_pdf(pdf_filename)
+        st.success(f"PDF generado: {pdf_filename}")
     if st.button("Copiar", type="secondary"):
-        pyperclip.copy(text)
+        
+        db_mongo.createDataUser(dict_fields)
+        pyperclip.copy(str(dict_fields))
+        # Todo: Eliminar cuando se terminen las pruebas
+        st.text_area("", str(dict_fields), height=300)
         st.success("Texto copiado al portapapeles!")
 
     st.text_area("", text, height=300)
