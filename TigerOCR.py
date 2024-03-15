@@ -12,6 +12,7 @@ from database import connection as db_mongo
 from fields import select_fields as fields
 from pdf import gen_pdf as pdf
 from pdf import convert as convert_pdf
+import pandas as pd
 
 # Configurar el comando de Tesseract OCR
 # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -49,16 +50,6 @@ def plot_word_frequency(text, num_words=10):
     st.pyplot(plt)
 
 
-def show_pdf(pdf_path):
-    imagenes = convert_pdf.toImage(pdf_path)
-    for imagen in imagenes:
-        st.image(imagen, caption="Imagen cargada", use_column_width=True)
-
-
-def generate_pdf():
-    pass
-
-
 # Base de datos
 db_mongo.get_Connection()
 
@@ -68,7 +59,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
 st.title("TechDocAdvantage PRO")
 st.caption(
     "¡Da vida a tus documentos con TechDocAdvantage PRO! Nuestra aplicación no solo convierte archivos PDF, PNG y JPEG. Simplifica la digitalización de tus documentos y obtén insights valiosos con TechDocAdvantage PRO."
@@ -98,59 +88,71 @@ if uploaded_file is not None:
     dict_fields = fields.getImportantFields(text)
     pdf_filename = None
 
-    transform_data = pdf.transform(dict_fields)
+    transform_data = pdf.transform(dict_fields.copy())
     tabla_datos = [transform_data]
 
     st.table(tabla_datos)
 
     if st.button("Guardar Información"):
+        if uploaded_file.type == "application/pdf":
+            db_mongo.createDataUser(dict_fields)
+            uploaded_file.seek(0)
+            with open("temp.pdf", "wb") as f:
+                f.write(uploaded_file.read())
+            pdf_path = "temp.pdf"
+            img = convert_pdf.toImage(pdf_path)
 
-        db_mongo.createDataUser(dict_fields)
+            with open("temp.jpg", "wb") as f:
+                img[0].save(f, "JPEG")
+            img = "temp.jpg"
 
-        uploaded_file.seek(0)
+            db_mongo.saveImage(img, dict_fields["nis"])
+            st.success("Datos guardados en la base de datos")
+            os.remove(img)
+            os.remove(pdf_path)
+        else:
+            db_mongo.createDataUser(dict_fields)
+            with open("temp.jpg", "wb") as f:
+                image.save(f, "JPEG")
+            img = "temp.jpg"
+            db_mongo.saveImage(img, dict_fields["nis"])
+            os.remove(img)
+            st.success("Datos guardados en la base de datos")
 
-        with open("temp.pdf", "wb") as f:
-            f.write(uploaded_file.read())
-        pdf_path = "temp.pdf"
-        img = convert_pdf.toImage(pdf_path)
-
-        with open("temp.jpg", "wb") as f:
-            img[0].save(f, "JPEG")
-        img = "temp.jpg"
-
-        field_id = db_mongo.saveImage(img, dict_fields["nis"])
-
-        st.image(img, caption="Imagen guardada", use_column_width=True)
-        st.success("Datos guardados en la base de datos")
-        os.remove(img)
-        os.remove(pdf_path)
-
-    # Generar el pdf y poner el boton de descargar
-    # TODO: Cargar datos de los todos los usuarios en tablas de streamlit
-    # TODO: Agregar el boton para visualizar la imagen
-    if st.button("Generar PDF", type="secondary"):
-
-        with st.spinner("Generando PDF..."):
-            pdf_filename = pdf.build(dict_fields)
-
-            show_pdf(pdf_filename)
-        st.success(f"PDF generado: {pdf_filename}")
-
-        with open(pdf_filename, "rb") as f:
-            bytes = f.read()
-
-        st.download_button(
-            "Descargar PDF",
-            bytes,
-            file_name="factura01.pdf",
-            mime="application/pdf",
-        )
-        os.remove(pdf_filename)
-
-# TODO: Unir todos los usuarios y mostrar la imagen de energuate cargada en mongo
-st.success("Información general de recibos de luz")
+st.info("Información general de recibos de luz")
 users = db_mongo.getAllUsers()
 
-for user in users:
-    new_data = pdf.transform(user)
-    st.table([new_data])
+transform_data = [pdf.transform(user) for user in users]
+
+col1, col2 = st.columns(2)
+img_bytes = None
+img = None
+id = None
+with col1:
+    if transform_data:
+        id = st.text_input("Buscar por NIS", placeholder="Ej: 1234567")
+
+if transform_data:
+    st.table(transform_data)
+else:
+    st.warning("No hay datos en la base de datos.")
+with col2:
+    if id:
+        with st.spinner("Cargando información..."):
+            id = id.strip()
+            img = db_mongo.getImage(id)
+            if img:
+                
+                img_buffer = BytesIO()
+                img.save(img_buffer, format="JPEG")
+                img_bytes = img_buffer.getvalue()
+                st.success("Información cargada")
+                st.image(img_bytes, caption="Imagen guardada", use_column_width=True)
+                st.download_button(
+                    "Descargar Imagen",
+                    img_bytes,
+                    file_name="imagen.jpg",
+                    mime="image/jpeg",
+                )
+            else:
+                st.warning("No se encontró información con el NIS proporcionado")
