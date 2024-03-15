@@ -23,7 +23,10 @@ def get_Connection():
 def createDataUser(data: dict[str, str]):
     db = client["TigerOCR"]
     collection = db["users"]
-    collection.insert_one(data)
+    try:
+        collection.insert_one(data)
+    except Exception as e:
+        print(e)
 
 
 def saveImage(path_img, nis: str):
@@ -31,25 +34,39 @@ def saveImage(path_img, nis: str):
     db = client["TigerOCR"]
     collection = db["images"]
     filename = nis
-    with open(path_img, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
-    fs = gridfs.GridFS(db)
-    field_id = fs.put(encoded_string, filename=filename)
-    collection.insert_one({"filename": filename, "field_id": field_id, "nis": nis})
-    return field_id
+    try: 
+        with open(path_img, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read())
+        fs = gridfs.GridFS(db)
+        field_id = fs.put(encoded_string, filename=filename)
+        collection.insert_one({"filename": filename, "field_id": field_id, "nis": nis})
+        
+    except Exception as e:
+        print(e)
+
 
 
 def getImage(filename):
     db = client["TigerOCR"]
     collection = db["images"]
     fs = gridfs.GridFS(db)
-    image = collection.find_one({"filename": filename})
-    image = fs.get(image["field_id"])
-    image = Image.open(BytesIO(base64.b64decode(image.read())))
-    return image
+    try:
+
+        image = collection.find_one({"filename": filename})
+        image = fs.get(image["field_id"])
+        image = Image.open(BytesIO(base64.b64decode(image.read())))
+        return image
+    except Exception as e:
+        print(e)
+        return None
 
 
-def getAllUsers():
+def getAllUsers() -> list[dict[str, str]]:
     db = client["TigerOCR"]
     collection = db["users"]
-    return collection.find({}, {"_id": 0})
+    try:
+        res = collection.find({}, {"_id": 0})
+        return [user for user in res]
+    except Exception as e:
+        print(e)
+        return None

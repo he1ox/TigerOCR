@@ -2,7 +2,7 @@ import re
 
 nis = re.compile(r"NIS: (\d+)")
 fecha_emision = re.compile(r"Fecha de Emisién: (\d{2}/\d{2}/\d{4})")
-consumo_electricidad = re.compile(r"Consumo de Electricidad (\d+) KWh")
+consumo_electricidad = re.compile(r"(\d+) KWh")
 alumbrado_publico = re.compile(
     r"(\d{1,4}(?:,\d{3})*(?:\.\d{2})?) Tasa de Alumbrado Publico"
 )
