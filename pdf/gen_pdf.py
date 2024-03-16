@@ -25,15 +25,10 @@ def transform(data: dict[str, str]):
 
 def build(data: dict[str, str]):
     data = transform(data)
-    print(f"{data=}")
     pdf_filename = "output.pdf"
     pdf = SimpleDocTemplate(pdf_filename, pagesize=letter)
-
     data = [[str(key), str(value)] for key, value in data.items()]
-    print(f"{data=}")
-
     table = Table(data)
-
     style = TableStyle(
         [
             ("BACKGROUND", (0, 0), (-1, 0), colors.blue),
