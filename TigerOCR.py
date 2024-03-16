@@ -13,6 +13,7 @@ from fields import select_fields as fields
 from pdf import gen_pdf as pdf
 from pdf import convert as convert_pdf
 import pandas as pd
+import datetime
 
 # Configurar el comando de Tesseract OCR
 # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -142,7 +143,7 @@ with col2:
             id = id.strip()
             img = db_mongo.getImage(id)
             if img:
-                
+                date_time = datetime.datetime.now().strftime("%d-%m-%Y")
                 img_buffer = BytesIO()
                 img.save(img_buffer, format="JPEG")
                 img_bytes = img_buffer.getvalue()
@@ -151,7 +152,7 @@ with col2:
                 st.download_button(
                     "Descargar Imagen",
                     img_bytes,
-                    file_name="imagen.jpg",
+                    file_name=f'NIS_{id}_{date_time}.jpg',
                     mime="image/jpeg",
                 )
             else:

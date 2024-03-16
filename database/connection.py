@@ -14,9 +14,9 @@ client = MongoClient(uri, server_api=ServerApi("1"))
 def get_Connection():
     try:
         client.admin.command("ping")
-        print("Connected to MongoDB")
+        
     except Exception as e:
-        print("Not connected to MongoDB")
+        
         print(e)
 
 
@@ -30,7 +30,6 @@ def createDataUser(data: dict[str, str]):
 
 
 def saveImage(path_img, nis: str):
-    print(f"path_img: {path_img}")
     db = client["TigerOCR"]
     collection = db["images"]
     filename = nis
